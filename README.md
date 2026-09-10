@@ -6,10 +6,12 @@
   données lors des redéploiements.
 - Protection par un code PIN partagé (`TEAM_PIN`) pour consulter et ajouter
   des lots.
-- Un code PIN admin séparé (`ADMIN_PIN`) pour modifier ou supprimer un lot
-  déjà enregistré — le reste de l'équipe ne peut ni l'un ni l'autre.
-- Chaque lot de l'historique est cliquable et affiche le détail complet des
-  chiffres (coûts, marge, seuil de rentabilité, invendus…).
+- Un code PIN admin séparé (`ADMIN_PIN`) réservé à une seule personne :
+  lui seul voit le détail complet de chaque lot (coûts, marge, seuil de
+  rentabilité, invendus…) et peut modifier ou supprimer un lot. Le reste de
+  l'équipe ne voit que le nom, la date et le bénéfice de chaque lot, et peut
+  seulement en ajouter de nouveaux — jamais consulter le détail ni toucher à
+  l'existant.
 
 ## Déployer sur Render.com (recommandé, gratuit pour démarrer)
 
@@ -46,16 +48,21 @@ cette fois, puisqu'elles sont dans la base et non plus dans un fichier.
 
 Sur la page, en haut à droite, il y a un bouton **Mode admin**. En cliquant
 dessus, un petit panneau demande le code `ADMIN_PIN`. Une fois validé :
-- des icônes ✎ (modifier) et ✕ (supprimer) apparaissent sur chaque lot de
-  l'historique ;
+- chaque lot de l'historique devient cliquable et se déplie pour montrer le
+  détail complet des chiffres (coûts, marge, seuil de rentabilité, invendus…) ;
+- des icônes ✎ (modifier) et ✕ (supprimer) apparaissent sur chaque lot ;
 - cliquer sur ✎ recharge le formulaire du haut avec les valeurs du lot pour
   les corriger, puis "Mettre à jour ce lot" enregistre la modification ;
 - le code admin reste mémorisé sur l'appareil jusqu'à ce qu'on désactive le
   mode admin (même bouton) ou qu'on efface les données du site.
 
-Sans mode admin activé, tout le monde peut toujours consulter le détail
-complet de chaque lot (clic sur le lot pour dérouler) et en ajouter de
-nouveaux — mais pas modifier ni supprimer ceux déjà enregistrés.
+Le serveur applique cette règle lui-même : sans le code admin, l'application
+ne reçoit même pas les données détaillées (coûts, marge…) — seulement le nom,
+la date et le bénéfice. Ce n'est donc pas juste caché visuellement, un membre
+de l'équipe ne peut pas y accéder même en regardant les données techniques de
+la page. Sans mode admin activé, chacun peut consulter ce résumé et ajouter
+de nouveaux lots — mais pas voir le détail ni modifier/supprimer un lot
+existant.
 
 ## Déployer sur Railway.app (alternative)
 

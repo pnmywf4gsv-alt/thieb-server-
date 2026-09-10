@@ -8,10 +8,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// PIN équipe : donne accès à la lecture et à l'ajout de lots.
 const PIN = process.env.TEAM_PIN || '';
+// PIN admin : donne en plus le droit de modifier / supprimer un lot existant.
+// Doit être différent du PIN équipe et configuré sur Render (Environment > ADMIN_PIN).
+const ADMIN_PIN = process.env.ADMIN_PIN || '';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL manquante. Ajoute une base Postgres et configure cette variable.');
+}
+if (!PIN) {
+  console.warn('TEAM_PIN non configuré : la page sera accessible sans code, pour toute personne ayant le lien.');
+}
+if (!ADMIN_PIN) {
+  console.warn('ADMIN_PIN non configuré : personne ne pourra modifier ou supprimer un lot.');
 }
 
 const pool = new Pool({
@@ -57,6 +67,7 @@ function rowToLot(row) {
   };
 }
 
+// Accès équipe : lecture + ajout de lots.
 function checkPin(req, res, next) {
   if (!PIN) return next();
   const pin = req.header('x-pin');
@@ -64,10 +75,35 @@ function checkPin(req, res, next) {
   next();
 }
 
+// Accès admin : modification + suppression d'un lot existant.
+// Si ADMIN_PIN n'est pas configuré côté serveur, ces actions sont désactivées pour tout le monde
+// (plutôt que de les laisser ouvertes par erreur).
+function checkAdminPin(req, res, next) {
+  if (!ADMIN_PIN) return res.status(403).json({ error: 'Fonction admin non configurée sur le serveur' });
+  const pin = req.header('x-admin-pin');
+  if (pin !== ADMIN_PIN) return res.status(401).json({ error: 'PIN admin invalide' });
+  next();
+}
+
+// Vrai seulement si le header x-admin-pin correspond au PIN admin configuré.
+// Ne bloque jamais la requête : sert juste à décider quelles infos renvoyer.
+function isAdmin(req) {
+  if (!ADMIN_PIN) return false;
+  return req.header('x-admin-pin') === ADMIN_PIN;
+}
+
 app.get('/api/lots', checkPin, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM lots ORDER BY saved_at DESC');
-    res.json(result.rows.map(rowToLot));
+    const lots = result.rows.map(rowToLot);
+    if (isAdmin(req)) {
+      // Admin : détail complet de chaque lot.
+      res.json(lots);
+    } else {
+      // Équipe : seulement de quoi afficher le résumé (nom, date, bénéfice).
+      // Le détail des coûts/marges n'est jamais envoyé à quelqu'un qui n'a pas le PIN admin.
+      res.json(lots.map(l => ({ id: l.id, nom: l.nom, date: l.date, beneficeReel: l.beneficeReel, savedAt: l.savedAt })));
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Erreur base de données' });
@@ -104,7 +140,40 @@ app.post('/api/lots', checkPin, async (req, res) => {
   }
 });
 
-app.delete('/api/lots/:id', checkPin, async (req, res) => {
+// Modifier un lot existant — réservé à l'admin.
+app.put('/api/lots/:id', checkAdminPin, async (req, res) => {
+  const b = req.body || {};
+  try {
+    const result = await pool.query(
+      `UPDATE lots SET
+        nom = $1, date = $2, ingredients = $3, paye = $4, quantite = $5,
+        prix_vente = $6, vendues = $7, cout_total = $8, cout_par_portion = $9, benefice_reel = $10
+       WHERE id = $11
+       RETURNING *`,
+      [
+        b.nom || 'Lot sans nom',
+        b.date || null,
+        b.ingredients || 0,
+        b.paye || 0,
+        b.quantite || 0,
+        b.prixVente || 0,
+        b.vendues === undefined ? null : b.vendues,
+        b.coutTotal || 0,
+        b.coutParPortion || 0,
+        b.beneficeReel === undefined ? null : b.beneficeReel,
+        req.params.id,
+      ]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Lot introuvable' });
+    res.json(rowToLot(result.rows[0]));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erreur base de données' });
+  }
+});
+
+// Supprimer un lot — réservé à l'admin.
+app.delete('/api/lots/:id', checkAdminPin, async (req, res) => {
   try {
     await pool.query('DELETE FROM lots WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
@@ -113,6 +182,9 @@ app.delete('/api/lots/:id', checkPin, async (req, res) => {
     res.status(500).json({ error: 'Erreur base de données' });
   }
 });
+
+// Utilisé par la page pour vérifier un PIN admin saisi, sans rien modifier.
+app.get('/api/admin/verify', checkAdminPin, (req, res) => res.json({ ok: true }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

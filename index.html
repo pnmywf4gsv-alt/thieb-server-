@@ -139,9 +139,11 @@
   .history-item:last-child{border-bottom:none;}
   .history-summary{
     display:flex;justify-content:space-between;align-items:center;
-    padding:12px 0;cursor:pointer;
+    padding:12px 0;
   }
-  .history-summary:hover{background:rgba(181,69,27,0.04);}
+  .history-item.admin-mode .history-summary{cursor:pointer;}
+  .history-item.admin-mode .history-summary:hover{background:rgba(181,69,27,0.04);}
+  .lock-hint{color:var(--muted);font-size:12px;}
   .h-left{display:flex;align-items:center;gap:8px;min-width:0;}
   .chevron{
     display:inline-block;width:9px;height:9px;flex:none;
@@ -254,7 +256,7 @@
 
   <div class="card" style="margin-top:28px;">
     <h2>Historique des lots — équipe</h2>
-    <div class="sub" style="margin-bottom:14px;">Clique sur un lot pour voir le détail complet des chiffres.</div>
+    <div class="sub" id="historyHint" style="margin-bottom:14px;">Chargement…</div>
     <div id="history"><div class="empty">Chargement…</div></div>
   </div>
 </div>
@@ -366,8 +368,15 @@ function renderDetail(lot){
   return html;
 }
 
+function updateHistoryHint(){
+  $('historyHint').textContent = adminActive
+    ? 'Mode admin : clique sur un lot pour voir le détail complet des chiffres, le modifier ou le supprimer.'
+    : 'Résumé visible par toute l\'équipe. Le détail complet de chaque lot (coûts, marges, invendus…) n\'est visible qu\'en mode admin.';
+}
+
 function renderHistory(){
   const historyEl = $('history');
+  updateHistoryHint();
   if (!lastLots.length){
     historyEl.innerHTML = '<div class="empty">Aucun lot enregistré pour l\'instant.</div>';
     return;
@@ -375,11 +384,11 @@ function renderHistory(){
   historyEl.innerHTML = lastLots.map(it => {
     const benefLabel = it.beneficeReel !== null && it.beneficeReel !== undefined ? eur(it.beneficeReel) : 'en attente des ventes';
     const benefClass = (it.beneficeReel !== null && it.beneficeReel < 0) ? 'neg' : (it.beneficeReel !== null ? 'pos' : '');
-    const open = openIds.has(it.id);
-    return `<div class="history-item${open ? ' open' : ''}" data-id="${it.id}">
-      <div class="history-summary" data-toggle="${it.id}">
+    const open = adminActive && openIds.has(it.id);
+    return `<div class="history-item${open ? ' open' : ''}${adminActive ? ' admin-mode' : ''}" data-id="${it.id}">
+      <div class="history-summary" ${adminActive ? `data-toggle="${it.id}"` : ''}>
         <div class="h-left">
-          <span class="chevron"></span>
+          ${adminActive ? '<span class="chevron"></span>' : ''}
           <div>
             <div class="h-name">${escapeHtml(it.nom || 'Lot sans nom')}</div>
             <div class="h-date">${it.date || ''}</div>
@@ -391,9 +400,11 @@ function renderHistory(){
           ${adminActive ? `<button class="icon-btn del" data-id="${it.id}" title="Supprimer">✕</button>` : ''}
         </div>
       </div>
-      <div class="detail">${renderDetail(it)}</div>
+      ${adminActive ? `<div class="detail">${renderDetail(it)}</div>` : ''}
     </div>`;
   }).join('');
+
+  if (!adminActive) return;
 
   historyEl.querySelectorAll('[data-toggle]').forEach(el => {
     el.addEventListener('click', () => {
@@ -530,11 +541,12 @@ $('adminToggle').addEventListener('click', () => {
   if (adminActive){
     adminActive = false;
     ADMIN_PIN = '';
+    openIds.clear();
     localStorage.removeItem('thieb_admin_pin');
     $('adminToggle').classList.remove('active');
     $('adminToggle').textContent = 'Mode admin';
     $('adminPanel').classList.remove('show');
-    renderHistory();
+    loadHistory();
   } else {
     $('adminPanel').classList.toggle('show');
   }
@@ -555,7 +567,7 @@ async function trySubmitAdminPin(){
     $('adminPanel').classList.remove('show');
     $('adminError').style.display = 'none';
     $('adminPinInput').value = '';
-    renderHistory();
+    loadHistory();
   } catch(e){
     ADMIN_PIN = prevPin; adminActive = prevActive;
     $('adminError').style.display = 'block';
