@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rentabilité Thieb — équipe</title>
+<style>
+  :root{
+    --cream:#F7F0DF;
+    --paper:#FFFCF5;
+    --ink:#241C14;
+    --paprika:#B5451B;
+    --paprika-dark:#8F3313;
+    --herb:#3D6B4F;
+    --herb-dark:#2A4B37;
+    --line:#E3D6B8;
+    --muted:#7A6E56;
+    --danger:#A8341F;
+    --danger-bg:#F5E1D8;
+    --ok-bg:#E6EEE1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Georgia',serif;
+    padding:32px 18px 80px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+  header{margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+  h1{
+    font-size:34px;
+    font-weight:600;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.5;
+    max-width:56ch;
+  }
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .status{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--herb);}
+  .dot.off{background:var(--danger);}
+  .admin-toggle{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12px;
+    background:none;border:1px solid var(--line);border-radius:20px;
+    padding:4px 12px;color:var(--muted);cursor:pointer;
+  }
+  .admin-toggle.active{background:var(--herb);border-color:var(--herb);color:var(--paper);font-weight:600;}
+  .admin-toggle:hover{border-color:var(--paprika);color:var(--paprika-dark);}
+  .admin-toggle.active:hover{color:var(--paper);}
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--paprika-dark);
+    margin:0 0 18px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;}
+  .row.single{grid-template-columns:1fr;}
+  label{
+    display:block;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  input{
+    width:100%;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:15px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--cream);
+    color:var(--ink);
+  }
+  input:focus{outline:none;border-color:var(--paprika);background:var(--paper);}
+  .results{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+  .stat{background:var(--paper);padding:16px 18px;}
+  .stat .label{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11.5px;color:var(--muted);margin-bottom:4px;}
+  .stat .value{font-size:23px;font-weight:600;}
+  .stat.wide{grid-column:1/-1;}
+  .stat.highlight{background:var(--ok-bg);}
+  .stat.warn{background:var(--danger-bg);}
+  .stat.warn .value{color:var(--danger);}
+  .stat.highlight .value{color:var(--herb-dark);}
+  button{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:14px;font-weight:600;
+    padding:11px 20px;border:none;border-radius:3px;
+    background:var(--herb);color:var(--paper);cursor:pointer;
+  }
+  button:hover{background:var(--herb-dark);}
+  button.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);
+    font-weight:400;padding:6px 12px;font-size:12.5px;
+  }
+  button.ghost:hover{border-color:var(--paprika);color:var(--paprika-dark);}
+  .actions{display:flex;justify-content:flex-end;gap:10px;align-items:center;}
+  .editing-badge{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12.5px;color:var(--paprika-dark);margin-right:auto;
+  }
+  .history-item{border-bottom:1px solid var(--line);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  .history-item:last-child{border-bottom:none;}
+  .history-summary{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 0;cursor:pointer;
+  }
+  .history-summary:hover{background:rgba(181,69,27,0.04);}
+  .h-left{display:flex;align-items:center;gap:8px;min-width:0;}
+  .chevron{
+    display:inline-block;width:9px;height:9px;flex:none;
+    border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);
+    transform:rotate(-45deg);transition:transform .15s ease;margin-left:2px;
+  }
+  .history-item.open .chevron{transform:rotate(45deg);}
+  .h-name{font-weight:600;font-size:14.5px;}
+  .h-date{color:var(--muted);font-size:12px;}
+  .h-benef{font-size:15px;font-weight:600;white-space:nowrap;}
+  .h-benef.neg{color:var(--danger);}
+  .h-benef.pos{color:var(--herb-dark);}
+  .h-actions{display:flex;align-items:center;gap:4px;}
+  .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:4px 6px;line-height:1;}
+  .icon-btn:hover{color:var(--paprika-dark);}
+  .icon-btn.del:hover{color:var(--danger);}
+  .detail{display:none;padding:2px 0 16px 17px;}
+  .history-item.open .detail{display:block;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:4px;}
+  .detail-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line);}
+  .detail-row .dk{color:var(--muted);}
+  .detail-row .dv{font-weight:600;}
+  .detail-row .dv.neg{color:var(--danger);}
+  .empty{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);font-size:13.5px;padding:8px 0;}
+
+  .gate{
+    position:fixed;inset:0;background:var(--cream);
+    display:flex;align-items:center;justify-content:center;z-index:50;
+  }
+  .gate-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:4px;
+    padding:32px;width:100%;max-width:340px;
+  }
+  .gate-card h2{margin:0 0 6px;font-size:19px;font-family:'Iowan Old Style','Georgia',serif;}
+  .gate-card p{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--muted);margin:0 0 16px;}
+  .gate-card input{margin-bottom:12px;}
+  .gate-error{color:var(--danger);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12.5px;margin-bottom:10px;display:none;}
+  #app{display:none;}
+
+  .admin-panel{
+    display:none;background:var(--paper);border:1px solid var(--line);border-radius:4px;
+    padding:16px 18px;margin-bottom:20px;
+  }
+  .admin-panel.show{display:block;}
+  .admin-panel .arow{display:flex;gap:10px;align-items:center;}
+  .admin-panel input{flex:1;}
+  .admin-panel p{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12.5px;color:var(--muted);margin:0 0 10px;}
+  .admin-error{color:var(--danger);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12.5px;margin-top:8px;display:none;}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h2>Accès équipe</h2>
+    <p>Entre le code PIN partagé pour accéder au suivi.</p>
+    <div class="gate-error" id="gateError">Code incorrect.</div>
+    <input id="pinInput" type="password" placeholder="Code PIN" inputmode="numeric">
+    <button id="pinSubmit" style="width:100%;">Entrer</button>
+  </div>
+</div>
+
+<div class="wrap" id="app">
+  <header>
+    <div>
+      <h1>Rentabilité — Thieb</h1>
+      <div class="sub">Suivi partagé par toute l'équipe. Un lot enregistré ici est visible par tout le monde.</div>
+    </div>
+    <div class="header-right">
+      <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Connecté</span></div>
+      <button class="admin-toggle" id="adminToggle">Mode admin</button>
+    </div>
+  </header>
+
+  <div class="admin-panel" id="adminPanel">
+    <p>Le mode admin permet de modifier ou supprimer un lot déjà enregistré. Ce code est différent de celui utilisé pour accéder à la page.</p>
+    <div class="arow">
+      <input id="adminPinInput" type="password" placeholder="Code PIN admin" inputmode="numeric">
+      <button id="adminSubmit">Activer</button>
+    </div>
+    <div class="admin-error" id="adminError">Code admin incorrect.</div>
+  </div>
+
+  <div class="card">
+    <h2 id="formTitle">Coûts du lot</h2>
+    <div class="row">
+      <div><label for="nom">Nom du lot</label><input id="nom" type="text" placeholder="ex. Thieb du 08/09"></div>
+      <div><label for="date">Date</label><input id="date" type="date"></div>
+    </div>
+    <div class="row">
+      <div><label for="ingredients">Coût des ingrédients (€)</label><input id="ingredients" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      <div><label for="paye">Paye de la cuisinière (€)</label><input id="paye" type="number" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="row">
+      <div><label for="quantite">Nombre de portions produites</label><input id="quantite" type="number" min="0" step="1" placeholder="0"></div>
+      <div><label for="prixVente">Prix de vente par portion (€)</label><input id="prixVente" type="number" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="row single">
+      <div><label for="vendues">Portions réellement vendues (laisse vide si tu ne sais pas encore)</label><input id="vendues" type="number" min="0" step="1" placeholder="0"></div>
+    </div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <div class="actions">
+    <span class="editing-badge" id="editingBadge" style="display:none;">Modification d'un lot existant</span>
+    <button class="ghost" id="cancelEditBtn" style="display:none;">Annuler</button>
+    <button id="saveBtn">Enregistrer ce lot</button>
+  </div>
+
+  <div class="card" style="margin-top:28px;">
+    <h2>Historique des lots — équipe</h2>
+    <div class="sub" style="margin-bottom:14px;">Clique sur un lot pour voir le détail complet des chiffres.</div>
+    <div id="history"><div class="empty">Chargement…</div></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fields = ['nom','date','ingredients','paye','quantite','prixVente','vendues'];
+let PIN = localStorage.getItem('thieb_pin') || '';
+let ADMIN_PIN = localStorage.getItem('thieb_admin_pin') || '';
+let adminActive = false;
+let editingId = null;
+let lastLots = [];
+let openIds = new Set();
+
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function eur(n){ return (n||0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function api(path, options = {}){
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pin': PIN,
+      ...(adminActive ? { 'x-admin-pin': ADMIN_PIN } : {}),
+      ...(options.headers||{})
+    }
+  });
+  if (res.status === 401) throw new Error('PIN_INVALID');
+  if (!res.ok) throw new Error('REQUEST_FAILED');
+  return res.json();
+}
+
+// Calcule tous les indicateurs à partir des valeurs brutes d'un lot
+// (utilisé pour le formulaire en cours ET pour le détail de chaque lot de l'historique).
+function computeFrom(ingredients, paye, quantite, prixVente, venduesRaw){
+  ingredients = num(ingredients); paye = num(paye); quantite = num(quantite); prixVente = num(prixVente);
+  const vendues = (venduesRaw === '' || venduesRaw === null || venduesRaw === undefined) ? null : num(venduesRaw);
+
+  const coutTotal = ingredients + paye;
+  const coutParPortion = quantite > 0 ? coutTotal / quantite : 0;
+  const seuil = prixVente > 0 ? coutTotal / prixVente : 0;
+  const margeUnitaire = prixVente - coutParPortion;
+  const margePct = prixVente > 0 ? (margeUnitaire / prixVente) * 100 : 0;
+
+  let caReel = null, beneficeReel = null, perteInvendus = null;
+  if (vendues !== null && quantite > 0){
+    caReel = prixVente * vendues;
+    beneficeReel = caReel - coutTotal;
+    const invendues = Math.max(quantite - vendues, 0);
+    perteInvendus = invendues * coutParPortion;
+  }
+  return {ingredients, paye, quantite, prixVente, vendues, coutTotal, coutParPortion, seuil, margeUnitaire, margePct, caReel, beneficeReel, perteInvendus};
+}
+
+function compute(){
+  return computeFrom($('ingredients').value, $('paye').value, $('quantite').value, $('prixVente').value, $('vendues').value);
+}
+
+function stat(label, value, extraClass, tone){
+  let cls = 'stat';
+  if (extraClass === 'wide') cls += ' wide';
+  if (tone) cls += ' ' + tone;
+  return `<div class="${cls}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+}
+
+function render(){
+  const r = compute();
+  let html = '';
+  html += stat('Coût total du lot', eur(r.coutTotal));
+  html += stat('Coût de revient / portion', eur(r.coutParPortion));
+  html += stat('Seuil de rentabilité', r.seuil > 0 ? Math.ceil(r.seuil) + ' portions à vendre' : '—', 'wide');
+  html += stat('Marge / portion', eur(r.margeUnitaire) + (r.margePct ? ' (' + r.margePct.toFixed(0) + '%)' : ''), '', r.margeUnitaire < 0 ? 'warn' : '');
+  if (r.vendues !== null){
+    html += stat('Chiffre d\'affaires réel', eur(r.caReel));
+    html += stat('Bénéfice réel', eur(r.beneficeReel), 'wide', r.beneficeReel < 0 ? 'warn' : 'highlight');
+    if (r.perteInvendus > 0) html += stat('Perte due aux invendus', eur(r.perteInvendus), 'wide', 'warn');
+  }
+  $('results').innerHTML = html;
+}
+
+fields.forEach(f => $(f).addEventListener('input', render));
+render();
+
+function detailRow(label, value, neg){
+  return `<div class="detail-row"><span class="dk">${label}</span><span class="dv${neg ? ' neg' : ''}">${value}</span></div>`;
+}
+
+function renderDetail(lot){
+  const r = computeFrom(lot.ingredients, lot.paye, lot.quantite, lot.prixVente, lot.vendues);
+  let html = '<div class="detail-grid">';
+  html += detailRow('Coût ingrédients', eur(r.ingredients));
+  html += detailRow('Paye cuisinière', eur(r.paye));
+  html += detailRow('Coût total', eur(r.coutTotal));
+  html += detailRow('Portions produites', r.quantite);
+  html += detailRow('Prix de vente / portion', eur(r.prixVente));
+  html += detailRow('Coût de revient / portion', eur(r.coutParPortion));
+  html += detailRow('Seuil de rentabilité', r.seuil > 0 ? Math.ceil(r.seuil) + ' portions' : '—');
+  html += detailRow('Marge / portion', eur(r.margeUnitaire) + (r.margePct ? ' (' + r.margePct.toFixed(0) + '%)' : ''), r.margeUnitaire < 0);
+  if (r.vendues !== null){
+    html += detailRow('Portions vendues', r.vendues);
+    html += detailRow('Chiffre d\'affaires réel', eur(r.caReel));
+    html += detailRow('Bénéfice réel', eur(r.beneficeReel), r.beneficeReel < 0);
+    if (r.perteInvendus > 0) html += detailRow('Perte due aux invendus', eur(r.perteInvendus), true);
+  } else {
+    html += detailRow('Portions vendues', 'en attente');
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderHistory(){
+  const historyEl = $('history');
+  if (!lastLots.length){
+    historyEl.innerHTML = '<div class="empty">Aucun lot enregistré pour l\'instant.</div>';
+    return;
+  }
+  historyEl.innerHTML = lastLots.map(it => {
+    const benefLabel = it.beneficeReel !== null && it.beneficeReel !== undefined ? eur(it.beneficeReel) : 'en attente des ventes';
+    const benefClass = (it.beneficeReel !== null && it.beneficeReel < 0) ? 'neg' : (it.beneficeReel !== null ? 'pos' : '');
+    const open = openIds.has(it.id);
+    return `<div class="history-item${open ? ' open' : ''}" data-id="${it.id}">
+      <div class="history-summary" data-toggle="${it.id}">
+        <div class="h-left">
+          <span class="chevron"></span>
+          <div>
+            <div class="h-name">${escapeHtml(it.nom || 'Lot sans nom')}</div>
+            <div class="h-date">${it.date || ''}</div>
+          </div>
+        </div>
+        <div class="h-actions">
+          <div class="h-benef ${benefClass}">${benefLabel}</div>
+          ${adminActive ? `<button class="icon-btn edit" data-id="${it.id}" title="Modifier">✎</button>` : ''}
+          ${adminActive ? `<button class="icon-btn del" data-id="${it.id}" title="Supprimer">✕</button>` : ''}
+        </div>
+      </div>
+      <div class="detail">${renderDetail(it)}</div>
+    </div>`;
+  }).join('');
+
+  historyEl.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.toggle;
+      if (openIds.has(id)) openIds.delete(id); else openIds.add(id);
+      renderHistory();
+    });
+  });
+  historyEl.querySelectorAll('.icon-btn.del').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Supprimer ce lot ?')) return;
+      try { await api('/api/lots/' + btn.dataset.id, { method: 'DELETE' }); loadHistory(); }
+      catch(err){ alert('Suppression impossible (droits admin requis).'); }
+    });
+  });
+  historyEl.querySelectorAll('.icon-btn.edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const lot = lastLots.find(l => l.id === btn.dataset.id);
+      if (lot) startEdit(lot);
+    });
+  });
+}
+
+async function loadHistory(){
+  const historyEl = $('history');
+  try {
+    const lots = await api('/api/lots');
+    setStatus(true);
+    lots.sort((a,b) => (b.savedAt||0) - (a.savedAt||0));
+    lastLots = lots;
+    renderHistory();
+  } catch(e){
+    if (e.message === 'PIN_INVALID'){ showGate(true); return; }
+    setStatus(false);
+    historyEl.innerHTML = '<div class="empty">Impossible de contacter le serveur.</div>';
+  }
+}
+
+function setStatus(ok){
+  $('statusDot').className = 'dot' + (ok ? '' : ' off');
+  $('statusText').textContent = ok ? 'Connecté' : 'Hors ligne';
+}
+
+// --- Édition d'un lot existant (admin) ---
+function startEdit(lot){
+  editingId = lot.id;
+  $('nom').value = lot.nom || '';
+  $('date').value = lot.date || '';
+  $('ingredients').value = lot.ingredients || '';
+  $('paye').value = lot.paye || '';
+  $('quantite').value = lot.quantite || '';
+  $('prixVente').value = lot.prixVente || '';
+  $('vendues').value = (lot.vendues === null || lot.vendues === undefined) ? '' : lot.vendues;
+  render();
+  $('formTitle').textContent = 'Modifier le lot';
+  $('saveBtn').textContent = 'Mettre à jour ce lot';
+  $('editingBadge').style.display = '';
+  $('cancelEditBtn').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function stopEdit(){
+  editingId = null;
+  fields.forEach(f => $(f).value = '');
+  render();
+  $('formTitle').textContent = 'Coûts du lot';
+  $('saveBtn').textContent = 'Enregistrer ce lot';
+  $('editingBadge').style.display = 'none';
+  $('cancelEditBtn').style.display = 'none';
+}
+
+$('cancelEditBtn').addEventListener('click', stopEdit);
+
+$('saveBtn').addEventListener('click', async () => {
+  const r = compute();
+  const data = {
+    nom: $('nom').value.trim() || 'Lot sans nom',
+    date: $('date').value,
+    ingredients: num($('ingredients').value),
+    paye: num($('paye').value),
+    quantite: r.quantite,
+    prixVente: num($('prixVente').value),
+    vendues: r.vendues,
+    coutTotal: r.coutTotal,
+    coutParPortion: r.coutParPortion,
+    beneficeReel: r.beneficeReel
+  };
+  try {
+    if (editingId){
+      await api('/api/lots/' + editingId, { method: 'PUT', body: JSON.stringify(data) });
+      stopEdit();
+    } else {
+      await api('/api/lots', { method: 'POST', body: JSON.stringify(data) });
+      fields.forEach(f => $(f).value = '');
+      render();
+    }
+    loadHistory();
+  } catch(e){
+    if (e.message === 'PIN_INVALID'){ showGate(true); return; }
+    alert(editingId ? 'Modification impossible (droits admin requis).' : 'Erreur lors de l\'enregistrement.');
+  }
+});
+
+// --- Gate PIN équipe ---
+function showGate(error){
+  $('gate').style.display = 'flex';
+  $('app').style.display = 'none';
+  $('gateError').style.display = error ? 'block' : 'none';
+}
+function hideGate(){
+  $('gate').style.display = 'none';
+  $('app').style.display = 'block';
+}
+
+$('pinSubmit').addEventListener('click', trySubmitPin);
+$('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') trySubmitPin(); });
+
+async function trySubmitPin(){
+  PIN = $('pinInput').value.trim();
+  try {
+    await api('/api/lots');
+    localStorage.setItem('thieb_pin', PIN);
+    hideGate();
+    loadHistory();
+  } catch(e){
+    showGate(true);
+  }
+}
+
+// --- Mode admin ---
+$('adminToggle').addEventListener('click', () => {
+  if (adminActive){
+    adminActive = false;
+    ADMIN_PIN = '';
+    localStorage.removeItem('thieb_admin_pin');
+    $('adminToggle').classList.remove('active');
+    $('adminToggle').textContent = 'Mode admin';
+    $('adminPanel').classList.remove('show');
+    renderHistory();
+  } else {
+    $('adminPanel').classList.toggle('show');
+  }
+});
+
+$('adminSubmit').addEventListener('click', trySubmitAdminPin);
+$('adminPinInput').addEventListener('keydown', e => { if (e.key === 'Enter') trySubmitAdminPin(); });
+
+async function trySubmitAdminPin(){
+  const candidate = $('adminPinInput').value.trim();
+  const prevPin = ADMIN_PIN, prevActive = adminActive;
+  ADMIN_PIN = candidate; adminActive = true;
+  try {
+    await api('/api/admin/verify');
+    localStorage.setItem('thieb_admin_pin', ADMIN_PIN);
+    $('adminToggle').classList.add('active');
+    $('adminToggle').textContent = 'Admin activé';
+    $('adminPanel').classList.remove('show');
+    $('adminError').style.display = 'none';
+    $('adminPinInput').value = '';
+    renderHistory();
+  } catch(e){
+    ADMIN_PIN = prevPin; adminActive = prevActive;
+    $('adminError').style.display = 'block';
+  }
+}
+
+// Au chargement : tente direct avec le PIN mémorisé (ou vide si pas de PIN configuré côté serveur),
+// puis revalide silencieusement un éventuel PIN admin déjà enregistré sur cet appareil.
+(async function init(){
+  try {
+    await api('/api/lots');
+    hideGate();
+    if (ADMIN_PIN){
+      adminActive = true;
+      try {
+        await api('/api/admin/verify');
+        $('adminToggle').classList.add('active');
+        $('adminToggle').textContent = 'Admin activé';
+      } catch(e){
+        adminActive = false; ADMIN_PIN = '';
+        localStorage.removeItem('thieb_admin_pin');
+      }
+    }
+    loadHistory();
+  } catch(e){
+    showGate(false);
+  }
+})();
+</script>
+</body>
+</html>
